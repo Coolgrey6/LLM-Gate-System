@@ -77,6 +77,25 @@ const ChatMessage = ({ message }) => {
         {message.content}
       </div>
       
+      {message.imageUrl && (
+        <div style={{ marginTop: '15px' }}>
+          <img 
+            src={message.imageUrl} 
+            alt="Generated image" 
+            style={{ 
+              maxWidth: '100%', 
+              height: 'auto', 
+              borderRadius: '8px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              border: '1px solid #e9ecef'
+            }}
+            onError={(e) => {
+              e.target.style.display = 'none'
+            }}
+          />
+        </div>
+      )}
+      
       {message.type === 'assistant' && renderGateResults(message.gateResults)}
     </div>
   )

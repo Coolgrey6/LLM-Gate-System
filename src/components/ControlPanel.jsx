@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Settings, Zap, Activity, Target, CheckCircle, AlertCircle } from 'lucide-react'
+import { Settings, Zap, Activity, Target, CheckCircle, AlertCircle, Image, Languages } from 'lucide-react'
 
 const ControlPanel = ({ 
   llmConfig, 
@@ -17,23 +17,41 @@ const ControlPanel = ({
   // Check which models are installed
   useEffect(() => {
     const checkInstalledModels = async () => {
-      try {
-        const response = await fetch('http://localhost:11434/api/tags')
-        if (response.ok) {
-          const data = await response.json()
-          const models = data.models?.map(model => model.name.split(':')[0]) || []
-          setInstalledModels(models)
-          
-          // Set status for each model
-          const status = {}
-          models.forEach(model => {
-            status[model] = 'installed'
-          })
-          setModelStatus(status)
+        try {
+          const response = await fetch('http://localhost:11434/api/tags')
+          if (response.ok) {
+            const data = await response.json()
+            const installedModelNames = data.models?.map(model => model.name.split(':')[0]) || []
+            
+            // Map installed models to expected model names
+            const modelMapping = {
+              'mistral': 'mistral',
+              'llama2': 'llama2', 
+              'codellama': 'codellama',
+              'llama3.1': 'llama3',
+              'gemma': 'gemma',
+              'phi3': 'phi3'
+            }
+            
+            const detectedModels = []
+            Object.entries(modelMapping).forEach(([installedName, expectedName]) => {
+              if (installedModelNames.includes(installedName)) {
+                detectedModels.push(expectedName)
+              }
+            })
+            
+            setInstalledModels(detectedModels)
+            
+            // Set status for each model
+            const status = {}
+            detectedModels.forEach(model => {
+              status[model] = 'installed'
+            })
+            setModelStatus(status)
+          }
+        } catch (error) {
+          console.log('Ollama not available or models not loaded')
         }
-      } catch (error) {
-        console.log('Ollama not available or models not loaded')
-      }
     }
     
     checkInstalledModels()
@@ -195,11 +213,11 @@ const ControlPanel = ({
             <option 
               value="llama3" 
               style={{ 
-                backgroundColor: installedModels.includes('llama3.1') ? '#d4edda' : 'white',
-                color: installedModels.includes('llama3.1') ? '#155724' : 'black'
+                backgroundColor: installedModels.includes('llama3') ? '#d4edda' : 'white',
+                color: installedModels.includes('llama3') ? '#155724' : 'black'
               }}
             >
-              {installedModels.includes('llama3.1') ? '✅ ' : '❌ '}Llama 3.1
+              {installedModels.includes('llama3') ? '✅ ' : '❌ '}Llama 3.1
             </option>
             <option 
               value="gemma" 
@@ -274,6 +292,259 @@ const ControlPanel = ({
           value={llmConfig.maxTokens}
           onChange={(e) => handleConfigChange('maxTokens', parseInt(e.target.value))}
         />
+      </div>
+
+      <div className="control-group">
+        <label>
+          <Image size={16} style={{ marginRight: '8px', display: 'inline' }} />
+          Image Generation
+        </label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+          <input
+            type="checkbox"
+            id="generateImage"
+            checked={llmConfig.generateImage}
+            onChange={(e) => handleConfigChange('generateImage', e.target.checked)}
+          />
+          <label htmlFor="generateImage" style={{ margin: 0 }}>
+            Generate images for prompts
+          </label>
+        </div>
+        
+        {llmConfig.generateImage && (
+          <>
+            <div style={{ marginBottom: '10px' }}>
+              <label htmlFor="imageProvider">Image Provider</label>
+              <select
+                id="imageProvider"
+                value={llmConfig.imageProvider}
+                onChange={(e) => handleConfigChange('imageProvider', e.target.value)}
+                style={{
+                  background: 'white',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  padding: '8px',
+                  fontSize: '14px',
+                  width: '100%'
+                }}
+              >
+                <option value="openai">OpenAI (API Key Required)</option>
+                <option value="local">Local/Open Source (No API Key)</option>
+              </select>
+            </div>
+
+            {llmConfig.imageProvider === 'openai' && (
+              <div style={{ marginBottom: '10px' }}>
+                <label htmlFor="imageModel">Image Model</label>
+                <select
+                  id="imageModel"
+                  value={llmConfig.imageModel}
+                  onChange={(e) => handleConfigChange('imageModel', e.target.value)}
+                  style={{
+                    background: 'white',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    padding: '8px',
+                    fontSize: '14px',
+                    width: '100%'
+                  }}
+                >
+                  <option value="dall-e-3">DALL-E 3</option>
+                  <option value="dall-e-2">DALL-E 2</option>
+                </select>
+              </div>
+            )}
+
+            {llmConfig.imageProvider === 'local' && (
+              <div style={{ marginBottom: '10px' }}>
+                <label htmlFor="localImageModel">Local Image Model</label>
+                <select
+                  id="localImageModel"
+                  value="stable-diffusion"
+                  disabled
+                  style={{
+                    background: '#f8f9fa',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    padding: '8px',
+                    fontSize: '14px',
+                    width: '100%',
+                    color: '#6c757d'
+                  }}
+                >
+                  <option value="stable-diffusion">Stable Diffusion (Local)</option>
+                </select>
+                <div style={{ fontSize: '0.8rem', color: '#6c757d', marginTop: '5px' }}>
+                  Generates professional demo images with 8 themed color schemes
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginBottom: '10px' }}>
+              <label htmlFor="imageSize">Image Size</label>
+              <select
+                id="imageSize"
+                value={llmConfig.imageSize}
+                onChange={(e) => handleConfigChange('imageSize', e.target.value)}
+                style={{
+                  background: 'white',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  padding: '8px',
+                  fontSize: '14px',
+                  width: '100%'
+                }}
+              >
+                <option value="1024x1024">1024x1024 (Square)</option>
+                <option value="1792x1024">1792x1024 (Landscape)</option>
+                <option value="1024x1792">1024x1792 (Portrait)</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '10px' }}>
+              <label htmlFor="imageQuality">Image Quality</label>
+              <select
+                id="imageQuality"
+                value={llmConfig.imageQuality}
+                onChange={(e) => handleConfigChange('imageQuality', e.target.value)}
+                style={{
+                  background: 'white',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  padding: '8px',
+                  fontSize: '14px',
+                  width: '100%'
+                }}
+              >
+                <option value="standard">Standard</option>
+                <option value="hd">HD (Higher Quality)</option>
+              </select>
+            </div>
+
+            <div style={{ 
+              fontSize: '0.8rem', 
+              color: '#6c757d', 
+              backgroundColor: llmConfig.imageProvider === 'openai' ? '#fff3cd' : '#d1ecf1',
+              padding: '8px',
+              borderRadius: '4px',
+              border: `1px solid ${llmConfig.imageProvider === 'openai' ? '#ffeaa7' : '#bee5eb'}`
+            }}>
+              <strong>Note:</strong> {
+                llmConfig.imageProvider === 'openai' 
+                  ? 'OpenAI image generation requires an API key and will consume additional credits.'
+                  : 'Local mode generates professional demo images with themed color schemes, particles, and sophisticated effects.'
+              }
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="control-group">
+        <label>
+          <Languages size={16} style={{ marginRight: '8px', display: 'inline' }} />
+          Translation & Language
+        </label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+          <input
+            type="checkbox"
+            id="enableTranslation"
+            checked={llmConfig.enableTranslation}
+            onChange={(e) => handleConfigChange('enableTranslation', e.target.checked)}
+          />
+          <label htmlFor="enableTranslation" style={{ margin: 0 }}>
+            Enable translation
+          </label>
+        </div>
+        
+        {llmConfig.enableTranslation && (
+          <>
+            <div style={{ marginBottom: '10px' }}>
+              <label htmlFor="inputLanguage">Input Language</label>
+              <select
+                id="inputLanguage"
+                value={llmConfig.inputLanguage}
+                onChange={(e) => handleConfigChange('inputLanguage', e.target.value)}
+                style={{
+                  background: 'white',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  padding: '8px',
+                  fontSize: '14px',
+                  width: '100%'
+                }}
+              >
+                <option value="auto">Auto-detect</option>
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
+                <option value="it">Italian</option>
+                <option value="pt">Portuguese</option>
+                <option value="ru">Russian</option>
+                <option value="ja">Japanese</option>
+                <option value="ko">Korean</option>
+                <option value="zh">Chinese</option>
+                <option value="ar">Arabic</option>
+                <option value="hi">Hindi</option>
+                <option value="nl">Dutch</option>
+                <option value="sv">Swedish</option>
+                <option value="no">Norwegian</option>
+                <option value="da">Danish</option>
+                <option value="fi">Finnish</option>
+                <option value="pl">Polish</option>
+                <option value="tr">Turkish</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '10px' }}>
+              <label htmlFor="outputLanguage">Output Language</label>
+              <select
+                id="outputLanguage"
+                value={llmConfig.outputLanguage}
+                onChange={(e) => handleConfigChange('outputLanguage', e.target.value)}
+                style={{
+                  background: 'white',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  padding: '8px',
+                  fontSize: '14px',
+                  width: '100%'
+                }}
+              >
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
+                <option value="it">Italian</option>
+                <option value="pt">Portuguese</option>
+                <option value="ru">Russian</option>
+                <option value="ja">Japanese</option>
+                <option value="ko">Korean</option>
+                <option value="zh">Chinese</option>
+                <option value="ar">Arabic</option>
+                <option value="hi">Hindi</option>
+                <option value="nl">Dutch</option>
+                <option value="sv">Swedish</option>
+                <option value="no">Norwegian</option>
+                <option value="da">Danish</option>
+                <option value="fi">Finnish</option>
+                <option value="pl">Polish</option>
+                <option value="tr">Turkish</option>
+              </select>
+            </div>
+
+            <div style={{ 
+              fontSize: '0.8rem', 
+              color: '#6c757d', 
+              backgroundColor: '#e8f5e8',
+              padding: '8px',
+              borderRadius: '4px',
+              border: '1px solid #c3e6c3'
+            }}>
+              <strong>Note:</strong> Translation uses Google Translate API (free tier). Input is translated to English for processing, then output is translated to your selected language.
+            </div>
+          </>
+        )}
       </div>
 
       <div className="control-group">
