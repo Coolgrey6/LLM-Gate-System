@@ -135,7 +135,7 @@ function App() {
       }
 
       // Route to appropriate API based on selected model
-      const localModels = ['mistral', 'llama2', 'codellama', 'llama3', 'gemma', 'phi3']
+      const localModels = ['mistral', 'llama2-7b', 'llama2-13b', 'codellama', 'llama3', 'gemma', 'phi3']
       const openAIModels = ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo', 'gpt-4o']
       const anthropicModels = ['claude-3-sonnet', 'claude-3-opus', 'claude-3-haiku']
       
@@ -215,7 +215,8 @@ function App() {
     // Map UI model names to actual Ollama model names
     const modelMapping = {
       'mistral': 'mistral:latest',
-      'llama2': 'llama2:latest', 
+      'llama2-7b': 'llama2:7b',
+      'llama2-13b': 'llama2:13b',
       'codellama': 'codellama:7b',
       'llama3': 'llama3.1:8b',
       'gemma': 'gemma:7b',

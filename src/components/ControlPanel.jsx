@@ -26,16 +26,29 @@ const ControlPanel = ({
             // Map installed models to expected model names
             const modelMapping = {
               'mistral': 'mistral',
-              'llama2': 'llama2', 
               'codellama': 'codellama',
               'llama3.1': 'llama3',
               'gemma': 'gemma',
               'phi3': 'phi3'
             }
             
+            // Also check for specific model variants
+            const specificModelMapping = {
+              'llama2:7b': 'llama2-7b',
+              'llama2:13b': 'llama2-13b'
+            }
+            
             const detectedModels = []
             Object.entries(modelMapping).forEach(([installedName, expectedName]) => {
               if (installedModelNames.includes(installedName)) {
+                detectedModels.push(expectedName)
+              }
+            })
+            
+            // Check for specific model variants
+            const fullModelNames = data.models?.map(model => model.name) || []
+            Object.entries(specificModelMapping).forEach(([fullName, expectedName]) => {
+              if (fullModelNames.includes(fullName)) {
                 detectedModels.push(expectedName)
               }
             })
@@ -118,7 +131,7 @@ const ControlPanel = ({
           Installed Models
         </div>
         <div className="metric-value" style={{ fontSize: '1rem', color: '#28a745' }}>
-          {installedModels.length} / 6 Local Models
+          {installedModels.length} / 8 Local Models
         </div>
         <div className="metric-description" style={{ fontSize: '0.8rem' }}>
           {installedModels.length > 0 ? (
@@ -193,13 +206,22 @@ const ControlPanel = ({
               {installedModels.includes('mistral') ? '✅ ' : '❌ '}Mistral 7B
             </option>
             <option 
-              value="llama2" 
+              value="llama2-7b" 
               style={{ 
-                backgroundColor: installedModels.includes('llama2') ? '#d4edda' : 'white',
-                color: installedModels.includes('llama2') ? '#155724' : 'black'
+                backgroundColor: installedModels.includes('llama2-7b') ? '#d4edda' : 'white',
+                color: installedModels.includes('llama2-7b') ? '#155724' : 'black'
               }}
             >
-              {installedModels.includes('llama2') ? '✅ ' : '❌ '}Llama 2
+              {installedModels.includes('llama2-7b') ? '✅ ' : '❌ '}Llama 2 7B
+            </option>
+            <option 
+              value="llama2-13b" 
+              style={{ 
+                backgroundColor: installedModels.includes('llama2-13b') ? '#d4edda' : 'white',
+                color: installedModels.includes('llama2-13b') ? '#155724' : 'black'
+              }}
+            >
+              {installedModels.includes('llama2-13b') ? '✅ ' : '❌ '}Llama 2 13B
             </option>
             <option 
               value="codellama" 
