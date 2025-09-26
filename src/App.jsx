@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Send, Settings, History, Zap, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { Send, Settings, History, Zap, CheckCircle, XCircle, AlertCircle, Info } from 'lucide-react'
 import GateSystem from './components/GateSystem'
 import ChatMessage from './components/ChatMessage'
 import ControlPanel from './components/ControlPanel'
 import HistoryPanel from './components/HistoryPanel'
+import AboutPage from './components/AboutPage'
 
 function App() {
   const [messages, setMessages] = useState([])
@@ -15,6 +16,7 @@ function App() {
   const [passedTests, setPassedTests] = useState(0)
   const [conversationHistory, setConversationHistory] = useState([])
   const [selectedHistory, setSelectedHistory] = useState(null)
+  const [showAbout, setShowAbout] = useState(false)
   const [llmConfig, setLlmConfig] = useState({
     apiKey: '',
     model: 'mistral',
@@ -290,11 +292,27 @@ function App() {
     ])
   }
 
+  if (showAbout) {
+    return <AboutPage onBack={() => setShowAbout(false)} />
+  }
+
   return (
     <div className="container">
       <div className="header">
-        <h1>LLM Testing Interface</h1>
-        <p>Test LLM responses with real-time accuracy tracking and gate system validation</p>
+        <div className="header-content">
+          <div className="header-text">
+            <h1>LLM Testing Interface</h1>
+            <p>Test LLM responses with real-time accuracy tracking and gate system validation</p>
+          </div>
+          <button 
+            onClick={() => setShowAbout(true)} 
+            className="about-button"
+            title="About this project"
+          >
+            <Info size={20} />
+            About
+          </button>
+        </div>
       </div>
       
       <div className="main-content">
