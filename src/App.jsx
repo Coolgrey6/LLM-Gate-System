@@ -23,6 +23,12 @@ function App() {
     temperature: 0.7,
     maxTokens: 1000
   })
+  const [gateWeights, setGateWeights] = useState({
+    coherence: 0.25,
+    relevance: 0.25,
+    completeness: 0.25,
+    safety: 0.25
+  })
 
   const messagesEndRef = useRef(null)
 
@@ -36,9 +42,9 @@ function App() {
 
   useEffect(() => {
     // Initialize gate system
-    const gate = new GateSystem()
+    const gate = new GateSystem(gateWeights)
     setGateSystem(gate)
-  }, [])
+  }, [gateWeights])
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return
@@ -324,6 +330,8 @@ function App() {
             totalTests={totalTests}
             passedTests={passedTests}
             isLoading={isLoading}
+            gateWeights={gateWeights}
+            setGateWeights={setGateWeights}
           />
           
           <HistoryPanel 

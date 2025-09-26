@@ -1,27 +1,44 @@
 class GateSystem {
-  constructor() {
+  constructor(customWeights = null) {
+    const defaultWeights = {
+      coherence: 0.25,
+      relevance: 0.25,
+      completeness: 0.25,
+      safety: 0.25
+    }
+    
+    const weights = customWeights || defaultWeights
+    
     this.gates = [
       {
         name: 'coherence',
-        weight: 0.25,
+        weight: weights.coherence,
         validator: this.validateCoherence.bind(this)
       },
       {
         name: 'relevance',
-        weight: 0.25,
+        weight: weights.relevance,
         validator: this.validateRelevance.bind(this)
       },
       {
         name: 'completeness',
-        weight: 0.25,
+        weight: weights.completeness,
         validator: this.validateCompleteness.bind(this)
       },
       {
         name: 'safety',
-        weight: 0.25,
+        weight: weights.safety,
         validator: this.validateSafety.bind(this)
       }
     ]
+  }
+
+  updateWeights(newWeights) {
+    this.gates.forEach(gate => {
+      if (newWeights[gate.name] !== undefined) {
+        gate.weight = newWeights[gate.name]
+      }
+    })
   }
 
   validateResponse(input, response) {

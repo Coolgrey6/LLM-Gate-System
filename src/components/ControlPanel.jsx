@@ -7,7 +7,9 @@ const ControlPanel = ({
   accuracy, 
   totalTests, 
   passedTests, 
-  isLoading 
+  isLoading,
+  gateWeights,
+  setGateWeights
 }) => {
   const [installedModels, setInstalledModels] = useState([])
   const [modelStatus, setModelStatus] = useState({})
@@ -272,6 +274,86 @@ const ControlPanel = ({
           value={llmConfig.maxTokens}
           onChange={(e) => handleConfigChange('maxTokens', parseInt(e.target.value))}
         />
+      </div>
+
+      <div className="control-group">
+        <label>
+          <Target size={16} style={{ marginRight: '8px', display: 'inline' }} />
+          Gate System Weights
+        </label>
+        <div style={{ fontSize: '0.8rem', color: '#6c757d', marginBottom: '10px' }}>
+          Adjust the importance of each validation gate (total should equal 1.0)
+        </div>
+        
+        <div className="gate-weight-slider">
+          <label htmlFor="coherence-weight">Coherence: {gateWeights.coherence.toFixed(2)}</label>
+          <input
+            id="coherence-weight"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={gateWeights.coherence}
+            onChange={(e) => setGateWeights(prev => ({ ...prev, coherence: parseFloat(e.target.value) }))}
+            style={{ marginBottom: '8px' }}
+          />
+        </div>
+
+        <div className="gate-weight-slider">
+          <label htmlFor="relevance-weight">Relevance: {gateWeights.relevance.toFixed(2)}</label>
+          <input
+            id="relevance-weight"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={gateWeights.relevance}
+            onChange={(e) => setGateWeights(prev => ({ ...prev, relevance: parseFloat(e.target.value) }))}
+            style={{ marginBottom: '8px' }}
+          />
+        </div>
+
+        <div className="gate-weight-slider">
+          <label htmlFor="completeness-weight">Completeness: {gateWeights.completeness.toFixed(2)}</label>
+          <input
+            id="completeness-weight"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={gateWeights.completeness}
+            onChange={(e) => setGateWeights(prev => ({ ...prev, completeness: parseFloat(e.target.value) }))}
+            style={{ marginBottom: '8px' }}
+          />
+        </div>
+
+        <div className="gate-weight-slider">
+          <label htmlFor="safety-weight">Safety: {gateWeights.safety.toFixed(2)}</label>
+          <input
+            id="safety-weight"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={gateWeights.safety}
+            onChange={(e) => setGateWeights(prev => ({ ...prev, safety: parseFloat(e.target.value) }))}
+            style={{ marginBottom: '8px' }}
+          />
+        </div>
+
+        <div style={{ 
+          fontSize: '0.8rem', 
+          color: gateWeights.coherence + gateWeights.relevance + gateWeights.completeness + gateWeights.safety === 1.0 ? '#28a745' : '#dc3545',
+          fontWeight: 'bold',
+          marginTop: '10px',
+          padding: '5px',
+          backgroundColor: gateWeights.coherence + gateWeights.relevance + gateWeights.completeness + gateWeights.safety === 1.0 ? '#d4edda' : '#f8d7da',
+          borderRadius: '4px',
+          border: `1px solid ${gateWeights.coherence + gateWeights.relevance + gateWeights.completeness + gateWeights.safety === 1.0 ? '#28a745' : '#dc3545'}`
+        }}>
+          Total Weight: {(gateWeights.coherence + gateWeights.relevance + gateWeights.completeness + gateWeights.safety).toFixed(2)}
+          {gateWeights.coherence + gateWeights.relevance + gateWeights.completeness + gateWeights.safety === 1.0 ? ' ✅' : ' ⚠️'}
+        </div>
       </div>
 
       <div style={{ 
