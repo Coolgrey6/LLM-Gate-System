@@ -103,29 +103,25 @@ function App() {
 
   const getLLMResponse = async (input) => {
     try {
-      // Call Ollama API
-      const response = await fetch('http://localhost:11434/api/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'mistral',
-          prompt: input,
-          stream: false,
-          options: {
-            temperature: llmConfig.temperature,
-            num_predict: llmConfig.maxTokens
-          }
-        })
-      })
+      let llmResponse = ''
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+      // Route to appropriate API based on selected model
+      const localModels = ['mistral', 'llama2', 'codellama', 'llama3', 'gemma', 'phi3']
+      const openAIModels = ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo', 'gpt-4o']
+      const anthropicModels = ['claude-3-sonnet', 'claude-3-opus', 'claude-3-haiku']
+      
+      if (localModels.includes(llmConfig.model)) {
+        // Local models via Ollama
+        llmResponse = await callOllamaAPI(input)
+      } else if (openAIModels.includes(llmConfig.model)) {
+        // OpenAI models
+        llmResponse = await callOpenAIAPI(input)
+      } else if (anthropicModels.includes(llmConfig.model)) {
+        // Anthropic Claude models
+        llmResponse = await callAnthropicAPI(input)
+      } else {
+        throw new Error(`Unsupported model: ${llmConfig.model}`)
       }
-
-      const data = await response.json()
-      const llmResponse = data.response || 'No response received'
 
       // Use gate system validation
       const gateResults = gateSystem ? gateSystem.validateResponse(input, llmResponse) : {
@@ -143,10 +139,10 @@ function App() {
         gateResults
       }
     } catch (error) {
-      console.error('Error calling Ollama API:', error)
+      console.error('Error calling LLM API:', error)
       
-      // Fallback to simulated response if Ollama is not available
-      const fallbackResponse = "I'm sorry, I'm having trouble connecting to the AI model right now. Please make sure Ollama is running and try again."
+      // Fallback to simulated response if API is not available
+      const fallbackResponse = `I'm sorry, I'm having trouble connecting to the ${llmConfig.model} model right now. Please check your API key and try again.`
       
       const gateResults = gateSystem ? gateSystem.validateResponse(input, fallbackResponse) : {
         coherence: 0.3,
@@ -161,6 +157,110 @@ function App() {
         gateResults
       }
     }
+  }
+
+  const callOllamaAPI = async (input) => {
+    // Map UI model names to actual Ollama model names
+    const modelMapping = {
+      'mistral': 'mistral:latest',
+      'llama2': 'llama2:latest', 
+      'codellama': 'codellama:7b',
+      'llama3': 'llama3.1:8b',
+      'gemma': 'gemma:7b',
+      'phi3': 'phi3:mini'
+    }
+    
+    const actualModelName = modelMapping[llmConfig.model] || llmConfig.model
+    
+    const response = await fetch('http://localhost:11434/api/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: actualModelName,
+        prompt: input,
+        stream: false,
+        options: {
+          temperature: llmConfig.temperature,
+          num_predict: llmConfig.maxTokens
+        }
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`Ollama API error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    return data.response || 'No response received'
+  }
+
+  const callOpenAIAPI = async (input) => {
+    if (!llmConfig.apiKey) {
+      throw new Error('OpenAI API key is required')
+    }
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${llmConfig.apiKey}`
+      },
+      body: JSON.stringify({
+        model: llmConfig.model,
+        messages: [
+          {
+            role: 'user',
+            content: input
+          }
+        ],
+        temperature: llmConfig.temperature,
+        max_tokens: llmConfig.maxTokens
+      })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`)
+    }
+
+    const data = await response.json()
+    return data.choices[0]?.message?.content || 'No response received'
+  }
+
+  const callAnthropicAPI = async (input) => {
+    if (!llmConfig.apiKey) {
+      throw new Error('Anthropic API key is required')
+    }
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': llmConfig.apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: llmConfig.model,
+        max_tokens: llmConfig.maxTokens,
+        temperature: llmConfig.temperature,
+        messages: [
+          {
+            role: 'user',
+            content: input
+          }
+        ]
+      })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(`Anthropic API error: ${errorData.error?.message || response.statusText}`)
+    }
+
+    const data = await response.json()
+    return data.content[0]?.text || 'No response received'
   }
 
   const handleKeyPress = (e) => {

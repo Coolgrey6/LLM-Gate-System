@@ -1,5 +1,5 @@
-import React from 'react'
-import { Settings, Zap, Activity, Target } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Settings, Zap, Activity, Target, CheckCircle, AlertCircle } from 'lucide-react'
 
 const ControlPanel = ({ 
   llmConfig, 
@@ -9,6 +9,34 @@ const ControlPanel = ({
   passedTests, 
   isLoading 
 }) => {
+  const [installedModels, setInstalledModels] = useState([])
+  const [modelStatus, setModelStatus] = useState({})
+
+  // Check which models are installed
+  useEffect(() => {
+    const checkInstalledModels = async () => {
+      try {
+        const response = await fetch('http://localhost:11434/api/tags')
+        if (response.ok) {
+          const data = await response.json()
+          const models = data.models?.map(model => model.name.split(':')[0]) || []
+          setInstalledModels(models)
+          
+          // Set status for each model
+          const status = {}
+          models.forEach(model => {
+            status[model] = 'installed'
+          })
+          setModelStatus(status)
+        }
+      } catch (error) {
+        console.log('Ollama not available or models not loaded')
+      }
+    }
+    
+    checkInstalledModels()
+  }, [])
+
   const handleConfigChange = (field, value) => {
     setLlmConfig(prev => ({
       ...prev,
@@ -64,6 +92,39 @@ const ControlPanel = ({
         </div>
       </div>
 
+      <div className="metric-card" style={{ backgroundColor: '#f8f9fa', border: '1px solid #e9ecef' }}>
+        <div className="metric-title">
+          <CheckCircle size={16} style={{ marginRight: '8px', display: 'inline', color: '#28a745' }} />
+          Installed Models
+        </div>
+        <div className="metric-value" style={{ fontSize: '1rem', color: '#28a745' }}>
+          {installedModels.length} / 6 Local Models
+        </div>
+        <div className="metric-description" style={{ fontSize: '0.8rem' }}>
+          {installedModels.length > 0 ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '5px' }}>
+              {installedModels.map((model, index) => (
+                <span 
+                  key={index}
+                  style={{ 
+                    backgroundColor: '#d4edda', 
+                    color: '#155724', 
+                    padding: '2px 6px', 
+                    borderRadius: '3px',
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  {model}
+                </span>
+              ))}
+            </div>
+          ) : (
+            'No local models detected'
+          )}
+        </div>
+      </div>
+
       <div className="control-group">
         <label htmlFor="apiKey">
           <Settings size={16} style={{ marginRight: '8px', display: 'inline' }} />
@@ -72,10 +133,19 @@ const ControlPanel = ({
         <input
           id="apiKey"
           type="password"
-          placeholder="Enter API Key"
+          placeholder={
+            llmConfig.model.includes('gpt') ? 'Enter OpenAI API Key' :
+            llmConfig.model.includes('claude') ? 'Enter Anthropic API Key' :
+            'Enter API Key (for API models)'
+          }
           value={llmConfig.apiKey}
           onChange={(e) => handleConfigChange('apiKey', e.target.value)}
         />
+        <div style={{ fontSize: '0.8rem', color: '#6c757d', marginTop: '5px' }}>
+          {llmConfig.model.includes('gpt') && 'Required for OpenAI models (GPT-3.5, GPT-4, GPT-4 Turbo, GPT-4o)'}
+          {llmConfig.model.includes('claude') && 'Required for Anthropic models (Claude 3 Sonnet, Opus, Haiku)'}
+          {['mistral', 'llama2', 'codellama', 'llama3', 'gemma', 'phi3'].includes(llmConfig.model) && 'Not needed for local models (Ollama)'}
+        </div>
       </div>
 
       <div className="control-group">
@@ -84,14 +154,95 @@ const ControlPanel = ({
           id="model"
           value={llmConfig.model}
           onChange={(e) => handleConfigChange('model', e.target.value)}
+          style={{
+            background: 'white',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            padding: '8px',
+            fontSize: '14px'
+          }}
         >
-          <option value="mistral">Mistral 7B (Local)</option>
-          <option value="llama2">Llama 2 (Local)</option>
-          <option value="codellama">Code Llama (Local)</option>
-          <option value="gpt-3.5-turbo">GPT-3.5 Turbo (API)</option>
-          <option value="gpt-4">GPT-4 (API)</option>
-          <option value="claude-3-sonnet">Claude 3 Sonnet (API)</option>
+          <optgroup label="Local Models (Ollama)">
+            <option 
+              value="mistral" 
+              style={{ 
+                backgroundColor: installedModels.includes('mistral') ? '#d4edda' : 'white',
+                color: installedModels.includes('mistral') ? '#155724' : 'black'
+              }}
+            >
+              {installedModels.includes('mistral') ? '✅ ' : '❌ '}Mistral 7B
+            </option>
+            <option 
+              value="llama2" 
+              style={{ 
+                backgroundColor: installedModels.includes('llama2') ? '#d4edda' : 'white',
+                color: installedModels.includes('llama2') ? '#155724' : 'black'
+              }}
+            >
+              {installedModels.includes('llama2') ? '✅ ' : '❌ '}Llama 2
+            </option>
+            <option 
+              value="codellama" 
+              style={{ 
+                backgroundColor: installedModels.includes('codellama') ? '#d4edda' : 'white',
+                color: installedModels.includes('codellama') ? '#155724' : 'black'
+              }}
+            >
+              {installedModels.includes('codellama') ? '✅ ' : '❌ '}Code Llama
+            </option>
+            <option 
+              value="llama3" 
+              style={{ 
+                backgroundColor: installedModels.includes('llama3.1') ? '#d4edda' : 'white',
+                color: installedModels.includes('llama3.1') ? '#155724' : 'black'
+              }}
+            >
+              {installedModels.includes('llama3.1') ? '✅ ' : '❌ '}Llama 3.1
+            </option>
+            <option 
+              value="gemma" 
+              style={{ 
+                backgroundColor: installedModels.includes('gemma') ? '#d4edda' : 'white',
+                color: installedModels.includes('gemma') ? '#155724' : 'black'
+              }}
+            >
+              {installedModels.includes('gemma') ? '✅ ' : '❌ '}Gemma
+            </option>
+            <option 
+              value="phi3" 
+              style={{ 
+                backgroundColor: installedModels.includes('phi3') ? '#d4edda' : 'white',
+                color: installedModels.includes('phi3') ? '#155724' : 'black'
+              }}
+            >
+              {installedModels.includes('phi3') ? '✅ ' : '❌ '}Phi-3 Mini
+            </option>
+          </optgroup>
+          <optgroup label="OpenAI Models (API)">
+            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+            <option value="gpt-4">GPT-4</option>
+            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+            <option value="gpt-4o">GPT-4o</option>
+          </optgroup>
+          <optgroup label="Anthropic Models (API)">
+            <option value="claude-3-sonnet">Claude 3 Sonnet</option>
+            <option value="claude-3-opus">Claude 3 Opus</option>
+            <option value="claude-3-haiku">Claude 3 Haiku</option>
+          </optgroup>
         </select>
+        <div style={{ 
+          fontSize: '0.8rem', 
+          color: '#6c757d', 
+          marginTop: '5px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '5px'
+        }}>
+          <CheckCircle size={12} style={{ color: '#28a745' }} />
+          <span>Green = Installed & Ready</span>
+          <AlertCircle size={12} style={{ color: '#dc3545', marginLeft: '10px' }} />
+          <span>Red = Not Installed</span>
+        </div>
       </div>
 
       <div className="control-group">
