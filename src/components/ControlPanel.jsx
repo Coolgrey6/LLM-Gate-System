@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Settings, Zap, Activity, Target, CheckCircle, AlertCircle, Image, Languages } from 'lucide-react'
+import { Settings, Zap, Activity, Target, CheckCircle, AlertCircle, Image, Video, Languages } from 'lucide-react'
 
 const ControlPanel = ({ 
   llmConfig, 
@@ -455,6 +455,154 @@ const ControlPanel = ({
                 llmConfig.imageProvider === 'openai' 
                   ? 'OpenAI image generation requires an API key and will consume additional credits.'
                   : 'Local mode generates professional demo images with themed color schemes, particles, and sophisticated effects.'
+              }
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="control-group">
+        <label>
+          <Video size={16} style={{ marginRight: '8px', display: 'inline' }} />
+          Video Generation
+        </label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+          <input
+            type="checkbox"
+            id="generateVideo"
+            checked={llmConfig.generateVideo}
+            onChange={(e) => handleConfigChange('generateVideo', e.target.checked)}
+          />
+          <label htmlFor="generateVideo" style={{ margin: 0 }}>
+            Generate videos for prompts
+          </label>
+        </div>
+        
+        {llmConfig.generateVideo && (
+          <>
+            <div style={{ marginBottom: '10px' }}>
+              <label htmlFor="videoProvider">Video Provider</label>
+              <select
+                id="videoProvider"
+                value={llmConfig.videoProvider}
+                onChange={(e) => handleConfigChange('videoProvider', e.target.value)}
+                style={{
+                  background: 'white',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  padding: '8px',
+                  fontSize: '14px',
+                  width: '100%'
+                }}
+              >
+                <option value="openai">OpenAI Sora (API Key Required)</option>
+                <option value="local">Local/Open Source (No API Key)</option>
+              </select>
+            </div>
+
+            {llmConfig.videoProvider === 'openai' && (
+              <>
+                <div style={{ marginBottom: '10px' }}>
+                  <label htmlFor="videoModel">Video Model</label>
+                  <select
+                    id="videoModel"
+                    value={llmConfig.videoModel}
+                    onChange={(e) => handleConfigChange('videoModel', e.target.value)}
+                    style={{
+                      background: 'white',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      padding: '8px',
+                      fontSize: '14px',
+                      width: '100%'
+                    }}
+                  >
+                    <option value="sora">Sora (Text-to-Video)</option>
+                  </select>
+                </div>
+              </>
+            )}
+
+            {llmConfig.videoProvider === 'local' && (
+              <div style={{ marginBottom: '10px' }}>
+                <label htmlFor="localVideoModel">Local Video Model</label>
+                <select
+                  id="localVideoModel"
+                  value="demo-video"
+                  disabled
+                  style={{
+                    background: '#f8f9fa',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    padding: '8px',
+                    fontSize: '14px',
+                    width: '100%',
+                    color: '#6c757d'
+                  }}
+                >
+                  <option value="demo-video">Demo Video Generator (Local)</option>
+                </select>
+                <div style={{ fontSize: '0.8rem', color: '#6c757d', marginTop: '5px' }}>
+                  Generates animated demo videos with canvas-based animation
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginBottom: '10px' }}>
+              <label htmlFor="videoDuration">Video Duration</label>
+              <select
+                id="videoDuration"
+                value={llmConfig.videoDuration}
+                onChange={(e) => handleConfigChange('videoDuration', e.target.value)}
+                style={{
+                  background: 'white',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  padding: '8px',
+                  fontSize: '14px',
+                  width: '100%'
+                }}
+              >
+                <option value="5s">5 seconds</option>
+                <option value="10s">10 seconds</option>
+                <option value="30s">30 seconds</option>
+                <option value="60s">60 seconds</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '10px' }}>
+              <label htmlFor="videoQuality">Video Quality</label>
+              <select
+                id="videoQuality"
+                value={llmConfig.videoQuality}
+                onChange={(e) => handleConfigChange('videoQuality', e.target.value)}
+                style={{
+                  background: 'white',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  padding: '8px',
+                  fontSize: '14px',
+                  width: '100%'
+                }}
+              >
+                <option value="standard">Standard</option>
+                <option value="hd">HD (720p)</option>
+                <option value="fullhd">Full HD (1080p)</option>
+              </select>
+            </div>
+
+            <div style={{ 
+              fontSize: '0.8rem', 
+              color: '#6c757d', 
+              backgroundColor: llmConfig.videoProvider === 'openai' ? '#fff3cd' : '#d1ecf1',
+              padding: '8px',
+              borderRadius: '4px',
+              border: `1px solid ${llmConfig.videoProvider === 'openai' ? '#ffeaa7' : '#bee5eb'}`
+            }}>
+              <strong>Note:</strong> {
+                llmConfig.videoProvider === 'openai' 
+                  ? 'OpenAI Sora video generation requires an API key and is not yet publicly available. This feature will be enabled when Sora becomes accessible via API.'
+                  : 'Local mode generates animated demo videos with canvas-based animation, particles, and dynamic effects.'
               }
             </div>
           </>

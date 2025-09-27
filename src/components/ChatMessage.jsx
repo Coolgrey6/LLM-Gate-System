@@ -1,4 +1,5 @@
 import React from 'react'
+import { Video } from 'lucide-react'
 import { CheckCircle, XCircle, AlertCircle, Info } from 'lucide-react'
 
 const ChatMessage = ({ message }) => {
@@ -93,6 +94,44 @@ const ChatMessage = ({ message }) => {
               e.target.style.display = 'none'
             }}
           />
+        </div>
+      )}
+
+      {message.videoUrl && (
+        <div style={{ marginTop: '15px' }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px', 
+            marginBottom: '8px',
+            color: '#6c757d',
+            fontSize: '0.9rem'
+          }}>
+            <Video size={16} />
+            <span>Generated Video</span>
+          </div>
+          <img 
+            src={message.videoUrl} 
+            alt="Generated video preview" 
+            style={{ 
+              maxWidth: '100%', 
+              height: 'auto', 
+              borderRadius: '8px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              border: '1px solid #e9ecef'
+            }}
+            onError={(e) => {
+              e.target.style.display = 'none'
+            }}
+          />
+          <div style={{ 
+            fontSize: '0.8rem', 
+            color: '#6c757d', 
+            marginTop: '5px',
+            fontStyle: 'italic'
+          }}>
+            Note: This is a demo video preview. Full video generation will be available when Sora API is released.
+          </div>
         </div>
       )}
       

@@ -1,5 +1,5 @@
 import React from 'react'
-import { History, Clock, Target, Trash2, Image } from 'lucide-react'
+import { History, Clock, Target, Trash2, Image, Video } from 'lucide-react'
 
 const HistoryPanel = ({ 
   conversationHistory, 
@@ -131,13 +131,20 @@ const HistoryPanel = ({
               }}>
                 <Clock size={12} />
                 {formatTimestamp(item.timestamp)}
-                {item.imageUrl && (
-                  <>
-                    <span style={{ margin: '0 4px' }}>•</span>
-                    <Image size={12} style={{ color: '#007bff' }} />
-                    <span style={{ color: '#007bff' }}>Image</span>
-                  </>
-                )}
+            {item.imageUrl && (
+              <>
+                <span style={{ margin: '0 4px' }}>•</span>
+                <Image size={12} style={{ color: '#007bff' }} />
+                <span style={{ color: '#007bff' }}>Image</span>
+              </>
+            )}
+            {item.videoUrl && (
+              <>
+                <span style={{ margin: '0 4px' }}>•</span>
+                <Video size={12} style={{ color: '#28a745' }} />
+                <span style={{ color: '#28a745' }}>Video</span>
+              </>
+            )}
               </div>
 
               {item.gateResults && !item.gateResults.error && (

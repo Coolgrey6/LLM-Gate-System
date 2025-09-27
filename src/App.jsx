@@ -22,11 +22,16 @@ function App() {
     model: 'mistral',
     temperature: 0.7,
     maxTokens: 1000,
-    generateImage: false,
+    generateImage: true,
     imageModel: 'dall-e-3',
     imageSize: '1024x1024',
     imageQuality: 'standard',
-    imageProvider: 'openai', // 'openai' or 'local'
+    imageProvider: 'local', // 'openai' or 'local'
+    generateVideo: false,
+    videoModel: 'sora',
+    videoDuration: '10s',
+    videoQuality: 'standard',
+    videoProvider: 'openai', // 'openai' or 'local'
     enableTranslation: false,
     inputLanguage: 'auto',
     outputLanguage: 'en'
@@ -103,7 +108,8 @@ function App() {
         accuracy: response.accuracy,
         timestamp: new Date(),
         gateResults: response.gateResults,
-        imageUrl: response.imageUrl
+        imageUrl: response.imageUrl,
+        videoUrl: response.videoUrl
       }
       setConversationHistory(prev => [conversationEntry, ...prev])
 
@@ -170,25 +176,61 @@ function App() {
 
       // Generate image if enabled (or force for testing)
       let imageUrl = null
-      const forceImageGeneration = false // Professional demo images work reliably
+      const forceImageGeneration = true // Enable for testing image generation
+      
+      console.log('Image generation check:', {
+        generateImage: llmConfig.generateImage,
+        forceImageGeneration: forceImageGeneration,
+        imageProvider: llmConfig.imageProvider,
+        willGenerate: llmConfig.generateImage || forceImageGeneration
+      })
       
       if (llmConfig.generateImage || forceImageGeneration) {
         console.log('Image generation enabled, provider:', llmConfig.imageProvider)
         try {
           imageUrl = await generateImage(input)
           console.log('Image generated successfully:', imageUrl ? 'Yes' : 'No')
+          console.log('Image URL:', imageUrl)
         } catch (error) {
-          console.error('Error generating image:', error)
+          console.error('Error generating image with', llmConfig.imageProvider, ':', error)
+          
+          // Fallback to local generation if OpenAI fails
+          if (llmConfig.imageProvider === 'openai') {
+            console.log('Falling back to local image generation...')
+            try {
+              imageUrl = await generateLocalImage(input)
+              console.log('Fallback image generated successfully:', imageUrl ? 'Yes' : 'No')
+            } catch (fallbackError) {
+              console.error('Error with fallback image generation:', fallbackError)
+            }
+          }
         }
       } else {
         console.log('Image generation disabled')
+      }
+
+      // Generate video if enabled
+      let videoUrl = null
+      const forceVideoGeneration = false // Video generation for testing
+      
+      if (llmConfig.generateVideo || forceVideoGeneration) {
+        console.log('Video generation enabled, provider:', llmConfig.videoProvider)
+        try {
+          videoUrl = await generateVideo(input)
+          console.log('Video generated successfully:', videoUrl ? 'Yes' : 'No')
+        } catch (error) {
+          console.error('Error generating video:', error)
+        }
+      } else {
+        console.log('Video generation disabled')
       }
 
       return {
         content: llmResponse,
         accuracy: overallAccuracy,
         gateResults,
-        imageUrl
+        imageUrl,
+        videoUrl
       }
     } catch (error) {
       console.error('Error calling LLM API:', error)
@@ -206,7 +248,9 @@ function App() {
       return {
         content: fallbackResponse,
         accuracy: 0.45,
-        gateResults
+        gateResults,
+        imageUrl: null,
+        videoUrl: null
       }
     }
   }
@@ -325,6 +369,15 @@ function App() {
     throw new Error('Invalid image provider')
   }
 
+  const generateVideo = async (prompt) => {
+    if (llmConfig.videoProvider === 'openai') {
+      return await generateOpenAIVideo(prompt)
+    } else if (llmConfig.videoProvider === 'local') {
+      return await generateLocalVideo(prompt)
+    }
+    throw new Error('Invalid video provider')
+  }
+
   const generateOpenAIImage = async (prompt) => {
     if (!llmConfig.apiKey) {
       throw new Error('API key is required for OpenAI image generation')
@@ -363,6 +416,7 @@ function App() {
 
   const generateFallbackImage = async (prompt) => {
     console.log('Generating professional demo image for prompt:', prompt)
+    console.log('Image size from config:', llmConfig.imageSize)
     
     try {
       const canvas = document.createElement('canvas')
@@ -372,6 +426,8 @@ function App() {
       const [width, height] = llmConfig.imageSize.split('x').map(Number)
       canvas.width = width
       canvas.height = height
+      
+      console.log('Canvas created:', { width, height, canvasWidth: canvas.width, canvasHeight: canvas.height })
       
       // Create multiple layered gradients for depth
       const gradient1 = ctx.createRadialGradient(
@@ -550,7 +606,9 @@ function App() {
       ctx.fillText(`${theme.name} Theme • AI Generated`, canvas.width / 2, canvas.height - 25)
       
       console.log(`Professional demo image generated successfully with ${theme.name} theme`)
-      return canvas.toDataURL('image/png')
+      const dataUrl = canvas.toDataURL('image/png')
+      console.log('Generated image data URL length:', dataUrl.length)
+      return dataUrl
       
     } catch (error) {
       console.error('Error generating professional demo image:', error)
@@ -567,6 +625,81 @@ function App() {
       ctx.fillText('Image Generation Error', 200, 200)
       return canvas.toDataURL()
     }
+  }
+
+  const generateOpenAIVideo = async (prompt) => {
+    if (!llmConfig.apiKey) {
+      throw new Error('API key is required for OpenAI video generation')
+    }
+
+    console.log('Generating OpenAI video for prompt:', prompt)
+    
+    // Note: Sora is not yet publicly available via API
+    // This is a placeholder for when it becomes available
+    throw new Error('OpenAI Sora video generation is not yet available via API. This feature will be enabled when Sora becomes publicly accessible.')
+  }
+
+  const generateLocalVideo = async (prompt) => {
+    console.log('Generating local demo video for prompt:', prompt)
+    
+    // Create a simple animated demo video using canvas
+    return await generateDemoVideo(prompt)
+  }
+
+  const generateDemoVideo = async (prompt) => {
+    console.log('Generating demo video for prompt:', prompt)
+    
+    // Create a simple animated GIF-like video using canvas
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    canvas.width = 512
+    canvas.height = 512
+    
+    // Create frames for animation
+    const frames = []
+    const frameCount = 30 // 1 second at 30fps
+    
+    for (let i = 0; i < frameCount; i++) {
+      const progress = i / frameCount
+      
+      // Clear canvas
+      ctx.fillStyle = `hsl(${(progress * 360 + 200) % 360}, 70%, 50%)`
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      
+      // Add animated elements
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'
+      ctx.beginPath()
+      ctx.arc(
+        256 + Math.sin(progress * Math.PI * 4) * 50,
+        256 + Math.cos(progress * Math.PI * 4) * 30,
+        20 + Math.sin(progress * Math.PI * 2) * 10,
+        0,
+        Math.PI * 2
+      )
+      ctx.fill()
+      
+      // Add text
+      ctx.fillStyle = 'white'
+      ctx.font = 'bold 24px Arial'
+      ctx.textAlign = 'center'
+      ctx.fillText('Demo Video', 256, 100)
+      
+      // Add prompt text (truncated)
+      ctx.font = '16px Arial'
+      const truncatedPrompt = prompt.length > 40 ? prompt.substring(0, 40) + '...' : prompt
+      ctx.fillText(truncatedPrompt, 256, 450)
+      
+      // Add frame number
+      ctx.font = '12px Arial'
+      ctx.fillText(`Frame ${i + 1}/${frameCount}`, 256, 480)
+      
+      frames.push(canvas.toDataURL('image/png'))
+    }
+    
+    // For now, return the first frame as a static image
+    // In a real implementation, this would create an actual video file
+    console.log(`Demo video generated with ${frameCount} frames`)
+    return frames[0] // Return first frame as placeholder
   }
 
   const translateText = async (text, fromLang, toLang) => {
